@@ -4,20 +4,31 @@ import addressRepository, { CreateAddressParams } from "@/repositories/address-r
 import enrollmentRepository, { CreateEnrollmentParams } from "@/repositories/enrollment-repository";
 import { exclude } from "@/utils/prisma-utils";
 import { Address, Enrollment } from "@prisma/client";
+import { NewAddress, ViaCEPAddress } from "@/protocols";
 
-async function getAddressFromCEP(cep: string) {
+async function getAddress(cep: string): Promise<ViaCEPAddress> {
   const result = await request.get(`https://viacep.com.br/ws/${cep}/json/`);
+  
+  if (!result) {
+    throw notFoundError();
+  }
 
-  if (!result.data) {
+  return result.data;
+}
+
+async function getAddressFromCEP(cep: string): Promise<NewAddress> {
+  const result = await getAddress(cep);
+
+  if (result === null) {
     throw notFoundError();
   }
 
   const addressData = {
-    logradouro: result.data.logradouro, 
-    complemento: result.data.complemento, 
-    bairro: result.data.bairro, 
-    cidade: result.data.localidade, 
-    uf: result.data.uf,
+    logradouro: result.logradouro, 
+    complemento: result.complemento, 
+    bairro: result.bairro, 
+    cidade: result.localidade, 
+    uf: result.uf,
   };
 
   return addressData;
@@ -51,7 +62,12 @@ async function createOrUpdateEnrollmentWithAddress(params: CreateOrUpdateEnrollm
   const enrollment = exclude(params, "address");
   const address = getAddressForUpsert(params.address);
 
-  //TODO - Verificar se o CEP é válido
+  const cepValid = await getAddressFromCEP(address.cep);
+ 
+  if(cepValid.error === true) {
+    throw notFoundError();
+  }
+  
   const newEnrollment = await enrollmentRepository.upsert(params.userId, enrollment, exclude(enrollment, "userId"));
 
   await addressRepository.upsert(newEnrollment.id, address, address);

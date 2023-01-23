@@ -86,7 +86,7 @@ describe("GET /enrollments/cep", () => {
     expect(response.status).toBe(httpStatus.OK);
     expect(response.body).toEqual(address);
   });
-  it("should respond with status 204 when CEP is valid", async () => {
+  it("should respond with status 204 when CEP in invalid", async () => {
     const response = await server.get("/enrollments/cep?cep=00");
 
     expect(response.status).toBe(httpStatus.NO_CONTENT);
@@ -204,7 +204,7 @@ describe("POST /enrollments", () => {
         },
       });
 
-      it("should respond with status 400 and create new enrollment if there is not any", async () => {
+      it("should respond with status 400 when body is invalid", async () => {
         const body = generateInvalidBody();
         const token = await generateValidToken();
 

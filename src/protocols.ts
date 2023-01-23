@@ -9,6 +9,7 @@ export type ViaCEPAddress = {
   bairro: string,
   localidade: string,
   uf: string,
+  error?: boolean
 };
 
 export type RequestError = {
@@ -18,3 +19,5 @@ export type RequestError = {
   name: string,
   message: string,
 };
+
+export type NewAddress = Partial<ViaCEPAddress>;
